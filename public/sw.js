@@ -1,5 +1,8 @@
 const CACHE_NAME = "kakeibo-v1";
-const STATIC_ASSETS = ["/", "/camera", "/add", "/expenses", "/categories"];
+const BASE = self.location.pathname.replace(/\/sw\.js$/, "");
+const STATIC_ASSETS = ["", "/camera", "/add", "/expenses", "/categories"].map(
+  (p) => BASE + p
+);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
