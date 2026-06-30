@@ -52,7 +52,7 @@ export default function CameraPage() {
   // プレビュー画面
   if (capturedBlob && previewUrl) {
     return (
-      <div className="fixed inset-0 bg-black z-50 flex flex-col">
+      <div className="fixed inset-0 bg-black z-[100] flex flex-col">
         {/* 画像プレビュー（セーフエリア内に収める） */}
         <div
           className="flex-1 flex items-center justify-center overflow-hidden"
@@ -102,7 +102,7 @@ export default function CameraPage() {
   if (error) {
     return (
       <div
-        className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center p-8 text-white"
+        className="fixed inset-0 bg-black z-[100] flex flex-col items-center justify-center p-8 text-white"
         style={{
           paddingTop: "calc(env(safe-area-inset-top, 0px) + 32px)",
           paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 32px)",
@@ -136,7 +136,7 @@ export default function CameraPage() {
 
   // カメラ画面
   return (
-    <div className="fixed inset-0 bg-black z-50 flex flex-col">
+    <div className="fixed inset-0 bg-black z-[100] flex flex-col">
       {/* カメラ映像（画面全体） */}
       <div className="flex-1 relative overflow-hidden">
         <video
