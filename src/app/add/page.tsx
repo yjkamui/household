@@ -1,10 +1,11 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCategories } from "@/hooks/useCategories";
 import CategoryPicker from "@/components/CategoryPicker";
 import { addExpense, getExpense, updateExpense, deleteExpense } from "@/lib/expenses";
 import { getImage, createImageUrl } from "@/lib/images";
+import { recognizeReceipt } from "@/lib/ocr";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 function AddExpenseForm() {
@@ -23,6 +24,8 @@ function AddExpenseForm() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [ocrRunning, setOcrRunning] = useState(false);
+  const dateTouched = useRef(false);
   const isEdit = !!expenseIdParam;
 
   useEffect(() => {
@@ -51,6 +54,30 @@ function AddExpenseForm() {
       });
     }
   }, [imageId]);
+
+  useEffect(() => {
+    if (isEdit || !imageIdParam) return;
+    let cancelled = false;
+    (async () => {
+      const img = await getImage(imageIdParam);
+      if (!img || cancelled) return;
+      setOcrRunning(true);
+      try {
+        const result = await recognizeReceipt(img.blob);
+        if (cancelled) return;
+        if (result.storeName) setStoreName((prev) => prev || result.storeName!);
+        if (result.amount) setAmount((prev) => prev || String(result.amount));
+        if (result.date && !dateTouched.current) setDate(result.date);
+      } catch (e) {
+        console.error("OCR failed", e);
+      } finally {
+        if (!cancelled) setOcrRunning(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [imageIdParam, isEdit]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,13 +112,23 @@ function AddExpenseForm() {
         {isEdit ? "支出を編集" : "支出を追加"}
       </h1>
 
+      {ocrRunning && (
+        <div className="mb-4 flex items-center justify-center gap-2 text-sm text-indigo-600 bg-indigo-50 rounded-xl py-2">
+          <span className="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+          レシートを読み取り中...
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">日付</label>
           <input
             type="date"
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) => {
+              dateTouched.current = true;
+              setDate(e.target.value);
+            }}
             className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             required
           />
